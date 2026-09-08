@@ -39,6 +39,44 @@ export function computeStreak(
   return streak;
 }
 
+/** Longest run of consecutive "kept" calendar dates in the whole history. */
+export function computeLongestStreak(
+  commitments: Commitment[],
+  now: Date = new Date()
+): number {
+  const resolved = resolveStatuses(commitments, now);
+  const keptDates = resolved
+    .filter((c) => c.status === "kept")
+    .map((c) => c.date)
+    .sort();
+
+  let longest = 0;
+  let current = 0;
+  let prevDate: string | null = null;
+  for (const date of keptDates) {
+    if (prevDate && addDaysKey(prevDate, 1) === date) {
+      current += 1;
+    } else {
+      current = 1;
+    }
+    longest = Math.max(longest, current);
+    prevDate = date;
+  }
+  return longest;
+}
+
+export function computeKeptPercentage(
+  commitments: Commitment[],
+  now: Date = new Date()
+): number {
+  const resolved = resolveStatuses(commitments, now).filter(
+    (c) => c.status === "kept" || c.status === "broken"
+  );
+  if (resolved.length === 0) return 0;
+  const kept = resolved.filter((c) => c.status === "kept").length;
+  return Math.round((kept / resolved.length) * 100);
+}
+
 export function findCommitment(
   commitments: Commitment[],
   dateKey: string

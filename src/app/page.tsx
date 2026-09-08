@@ -5,7 +5,6 @@ import { Landing } from "@/components/Landing";
 import { SetupTime } from "@/components/SetupTime";
 import { CommitmentScreen } from "@/components/CommitmentScreen";
 import { Dashboard } from "@/components/Dashboard";
-import { Header } from "@/components/Header";
 import { usePromiseState } from "@/lib/usePromiseState";
 
 type OnboardingStep = "landing" | "time" | "commit";
@@ -41,17 +40,14 @@ export default function Home() {
   }
 
   return (
-    <>
-      <Header streak={state.streak} />
-      <Dashboard
-        phase={state.phase}
-        tonight={state.tonight}
-        streak={state.streak}
-        defaultShutdownTime={state.profile.defaultShutdownTime}
-        now={state.now}
-        onCommitTonight={state.commitTonight}
-        onConfirmShutdown={state.confirmShutdown}
-      />
-    </>
+    <Dashboard
+      phase={state.phase}
+      tonight={state.tonight}
+      streak={state.streak}
+      defaultShutdownTime={state.profile.defaultShutdownTime}
+      now={state.now}
+      onCommitTonight={state.commitTonight}
+      onConfirmShutdown={state.confirmShutdown}
+    />
   );
 }

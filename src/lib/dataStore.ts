@@ -1,7 +1,7 @@
 "use client";
 
-import { AppData, Commitment, Profile } from "./types";
-import { loadData, saveData } from "./storage";
+import { AppData, Checkin, Commitment, Habit, Profile } from "./types";
+import { clearAllData, loadData, saveData } from "./storage";
 
 /**
  * Stable placeholder returned during SSR and the initial client hydration
@@ -14,9 +14,11 @@ export const DATA_SERVER_SNAPSHOT: AppData = {
     onboarded: false,
     timezone: "UTC",
     defaultShutdownTime: "23:00",
-    notificationsEnabled: false,
+    notificationSetting: "off",
   },
   commitments: [],
+  habits: [],
+  checkins: [],
 };
 
 let cached: AppData | null = null;
@@ -64,4 +66,53 @@ export function setCommitment(commitment: Commitment): void {
 
 export function setCommitments(commitments: Commitment[]): void {
   commit({ ...getDataSnapshot(), commitments });
+}
+
+export function addHabit(habit: Habit): void {
+  const data = getDataSnapshot();
+  commit({ ...data, habits: [...data.habits, habit] });
+}
+
+export function updateHabit(habitId: string, patch: Partial<Habit>): void {
+  const data = getDataSnapshot();
+  commit({
+    ...data,
+    habits: data.habits.map((h) => (h.id === habitId ? { ...h, ...patch } : h)),
+  });
+}
+
+export function deleteHabit(habitId: string): void {
+  const data = getDataSnapshot();
+  commit({
+    ...data,
+    habits: data.habits.filter((h) => h.id !== habitId),
+    checkins: data.checkins.filter((c) => c.habitId !== habitId),
+  });
+}
+
+export function toggleCheckin(habitId: string, localDate: string): void {
+  const data = getDataSnapshot();
+  const existing = data.checkins.find(
+    (c) => c.habitId === habitId && c.localDate === localDate
+  );
+  if (existing) {
+    commit({
+      ...data,
+      checkins: data.checkins.filter((c) => c.id !== existing.id),
+    });
+    return;
+  }
+  const checkin: Checkin = {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    habitId,
+    localDate,
+    completedAt: new Date().toISOString(),
+  };
+  commit({ ...data, checkins: [...data.checkins, checkin] });
+}
+
+export function resetAllData(): void {
+  clearAllData();
+  cached = null;
+  emit();
 }

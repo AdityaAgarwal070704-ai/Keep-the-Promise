@@ -16,7 +16,13 @@ import {
   getClockSnapshot,
   subscribeClock,
 } from "./clock";
-import { computeStreak, findCommitment, resolveStatuses } from "./streak";
+import {
+  computeKeptPercentage,
+  computeLongestStreak,
+  computeStreak,
+  findCommitment,
+  resolveStatuses,
+} from "./streak";
 import { dateAtTime, reminderTimeFor, todayKey } from "./date";
 import { notifyReminder, requestNotificationPermission } from "./notifications";
 
@@ -42,6 +48,14 @@ export function usePromiseState() {
   );
   const streak = useMemo(
     () => computeStreak(data.commitments, now),
+    [data.commitments, now]
+  );
+  const longestStreak = useMemo(
+    () => computeLongestStreak(data.commitments, now),
+    [data.commitments, now]
+  );
+  const keptPercentage = useMemo(
+    () => computeKeptPercentage(data.commitments, now),
     [data.commitments, now]
   );
 
@@ -81,7 +95,7 @@ export function usePromiseState() {
 
   const commitTonight = useCallback(
     async (shutdownTime: string) => {
-      await requestNotificationPermission();
+      const permission = await requestNotificationPermission();
       const dateKey = todayKey(getClockSnapshot());
       const commitment: Commitment = {
         id: makeId(),
@@ -95,8 +109,7 @@ export function usePromiseState() {
         ...getDataSnapshot().profile,
         onboarded: true,
         defaultShutdownTime: shutdownTime,
-        notificationsEnabled:
-          typeof Notification !== "undefined" && Notification.permission === "granted",
+        notificationSetting: permission === "granted" ? "on" : "off",
       });
       setCommitment(commitment);
     },
@@ -126,6 +139,8 @@ export function usePromiseState() {
     tonight,
     phase,
     streak,
+    longestStreak,
+    keptPercentage,
     history,
     now,
     commitTonight,

@@ -17,6 +17,13 @@ interface DashboardProps {
   onConfirmShutdown: () => void;
 }
 
+function greeting(now: Date): string {
+  const hour = now.getHours();
+  if (hour < 12) return "Good morning.";
+  if (hour < 18) return "Good afternoon.";
+  return "Good evening.";
+}
+
 export function Dashboard({
   phase,
   tonight,
@@ -29,6 +36,7 @@ export function Dashboard({
   if (phase === "no-commitment") {
     return (
       <NoCommitmentFlow
+        now={now}
         defaultShutdownTime={defaultShutdownTime}
         onCommitTonight={onCommitTonight}
       />
@@ -39,15 +47,23 @@ export function Dashboard({
     <div className="flex flex-1 flex-col items-center justify-center gap-8 px-6 py-16 text-center">
       {phase === "locked" && tonight && (
         <>
-          <p className="text-xs tracking-[0.3em] text-muted uppercase">
-            Promise locked
-          </p>
-          <h1 className="font-serif italic text-3xl text-foreground sm:text-4xl">
-            Tonight · {formatTime12h(tonight.shutdownTime)}
-          </h1>
-          <p className="text-sm text-muted">
-            We&apos;ll remind you at {formatTime12h(tonight.reminderTime)}.
-          </p>
+          <p className="text-sm text-muted">{greeting(now)}</p>
+          <div className="flex flex-col items-center gap-2">
+            <p className="text-xs tracking-[0.3em] text-muted uppercase">
+              Tonight&apos;s promise
+            </p>
+            <h1 className="font-serif italic text-4xl text-foreground sm:text-5xl">
+              {formatTime12h(tonight.shutdownTime)}
+            </h1>
+            <p className="text-base text-muted">Disconnect.</p>
+          </div>
+          <div className="flex flex-col items-center gap-1">
+            <p className="text-sm font-medium text-accent-strong">Promise locked</p>
+            <p className="text-sm text-muted">
+              Reminder at {formatTime12h(tonight.reminderTime)}.
+            </p>
+          </div>
+          <StreakLine streak={streak} />
         </>
       )}
 
@@ -87,11 +103,21 @@ export function Dashboard({
           >
             The promise wasn&apos;t kept tonight.
           </h1>
-          <p className="text-sm text-muted">
-            Streak resets. Tomorrow is another night.
-          </p>
+          <p className="text-sm text-muted">Tomorrow is another night.</p>
         </>
       )}
+    </div>
+  );
+}
+
+function StreakLine({ streak }: { streak: number }) {
+  if (streak <= 0) return null;
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <p className="text-xs tracking-[0.3em] text-muted uppercase">Current streak</p>
+      <p className="text-lg text-accent-strong">
+        🔥 {streak} {streak === 1 ? "night" : "nights"}
+      </p>
     </div>
   );
 }
@@ -112,22 +138,23 @@ function KeptView({
   return (
     <>
       <h1 className="font-serif italic text-3xl text-foreground sm:text-4xl" aria-live="polite">
-        {justNow ? "That's the promise." : "Promise kept."}
+        Promise kept.
       </h1>
-      <p className="text-sm text-muted">
-        {justNow ? "See you tomorrow." : "You kept your word tonight."}
-      </p>
+      <p className="text-sm text-muted">You kept your word.</p>
       <p className="mt-2 text-lg text-accent-strong">
         🔥 {streak} {streak === 1 ? "night" : "nights"}
       </p>
+      {justNow && <p className="text-sm text-muted">Good night.</p>}
     </>
   );
 }
 
 function NoCommitmentFlow({
+  now,
   defaultShutdownTime,
   onCommitTonight,
 }: {
+  now: Date;
   defaultShutdownTime: string;
   onCommitTonight: (shutdownTime: string) => Promise<void> | void;
 }) {
@@ -155,12 +182,10 @@ function NoCommitmentFlow({
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-8 px-6 py-16 text-center">
+      <p className="text-sm text-muted">{greeting(now)}</p>
       <h1 className="font-serif italic text-3xl text-foreground sm:text-4xl">
-        Make tonight&apos;s promise
+        Tonight is still yours.
       </h1>
-      <p className="max-w-xs text-sm text-muted">
-        Choose the time you&apos;ll disconnect tonight.
-      </p>
       <button
         type="button"
         onClick={() => setStep("time")}
